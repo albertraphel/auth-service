@@ -1,0 +1,124 @@
+1. @Entity
+Marks this class as a JPA entity, meaning it maps to a database table.
+
+2. @Table(name = "users")
+Maps the class to the users table in the database (you could name it anything, but this overrides the default which would be the class name User).
+
+3. Lombok Annotations:
+@Data: Generates getters, setters, toString(), equals(), and hashCode().
+
+@NoArgsConstructor: Generates a no-argument constructor (required by JPA).
+
+@AllArgsConstructor: Generates a constructor with all fields.
+
+@Builder: Allows for builder pattern, e.g. User.builder().username("abc").build().
+
+@Id: Primary key of the entity.
+
+@GeneratedValue(strategy = GenerationType.IDENTITY): Database will auto-generate the ID (e.g., auto-increment in MySQL/Postgres).
+
+public String generateToken(String username)
+This method generates a JWT token for the given username.
+
+It returns a signed JWT as a String, which can be returned to the client (e.g., after login) and used for future authenticated requests.
+
+A JWT token has 3 parts:
+
+Header – algorithm & token type
+
+Payload – the claims (e.g. username, issued time, expiry)
+
+Signature – to verify it hasn't been tampered with
+
+Sets the subject of the token to the username.
+
+The subject is often the unique identifier for the user (e.g. username or user ID).
+
+Sets the "iat" (issued at) claim to the current date/time.
+
+Indicates when the token was created.
+
+Sets the expiration time for the token.
+
+jwtExpiration should be a duration in milliseconds (e.g., 3600000 for 1 hour).
+
+This ensures the token is only valid for a limited time.
+
+.signWith(SignatureAlgorithm.ES512, jwtSecret)
+Signs the token using the ES512 algorithm (Elliptic Curve Digital Signature Algorithm).
+
+jwtSecret is the private key or shared secret used for signing.
+
+This ensures the token can't be tampered with and can be verified later.
+
+⚠️ ES512 requires an Elliptic Curve key, not a simple string. If you're using a string as a secret, you'd likely want HS256 (HMAC SHA-256) instead.
+
+.compact();
+Finalizes and serializes the JWT to a compact string format: header.payload.signature.
+
+The returned string might look like this:
+
+php-template
+Copy
+Edit
+eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbHBoYSIsImlhdCI6MTY4Nz...<truncated>
+This token is typically stored on the frontend (e.g., in localStorage or a cookie) and sent with each API request in an Authorization: Bearer <token> header.
+
+In your project, the JwtFilter (a custom Spring Security filter) is executed once for every request before the request reaches your controller—except for the /api/auth/** endpoints, which you've permitted without authentication.
+
+🔄 When Exactly is JwtFilter Executed?
+This is controlled in your SecurityConfig.java file:
+
+java
+Copy
+Edit
+.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+This line tells Spring Security to run your JwtFilter before the built-in UsernamePasswordAuthenticationFilter.
+
+🧠 So the flow is:
+Client sends a request to a protected API (not /api/auth/**)
+
+JwtFilter is triggered before authentication happens
+
+It checks for the Authorization header with a Bearer token
+
+If token is present and valid:
+
+It loads the user details
+
+Sets authentication into the SecurityContext
+
+The request continues to the controller if authentication is successful
+
+If no token or invalid token, access is denied (403 Forbidden or 401 Unauthorized)
+
+✅ JwtFilter is NOT triggered for:
+Any request that matches this:
+
+java
+Copy
+Edit
+.requestMatchers("/api/auth/**").permitAll()
+So /api/auth/register and /api/auth/login go straight to the controller without token validation.
+
+
+Typical Flow in Microservices
+Client hits auth-service at /api/auth/login
+
+auth-service authenticates and returns JWT
+
+Client stores token (e.g., localStorage/cookies)
+
+For other requests (to user-service, post-service, etc.), the token is added to Authorization: Bearer <token>
+
+API Gateway checks token presence and validity using a lightweight JWT verifier (optional)
+
+If valid, forwards to appropriate microservice
+
+✅ Summary
+Concern	Responsible Service
+User login/registration	auth-service
+Token generation	auth-service
+Token validation	auth-service and optionally Gateway
+Securing other microservices	Each service can validate token or rely on gateway
+Let me know if you want help writing a simple gateway-level token filter, or connecting this auth-service to other microservices (like post-service, user-service, etc.).

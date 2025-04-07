@@ -1,0 +1,12 @@
+com\albert\instagram\authservice\security\CustomUserDetailsService.class
+com\albert\instagram\authservice\security\JwtFilter.class
+com\albert\instagram\authservice\security\JwtUtil.class
+com\albert\instagram\authservice\AuthServiceApplication.class
+com\albert\instagram\authservice\dto\RegisterRequest.class
+com\albert\instagram\authservice\dto\AuthResponse.class
+com\albert\instagram\authservice\dto\LoginRequest.class
+com\albert\instagram\authservice\model\User$UserBuilder.class
+com\albert\instagram\authservice\repository\UserRepository.class
+com\albert\instagram\authservice\config\SecurityConfig.class
+com\albert\instagram\authservice\controller\AuthController.class
+com\albert\instagram\authservice\model\User.class
